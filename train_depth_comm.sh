@@ -1,0 +1,20 @@
+python train.py \
+--niter 15 \
+--niter_decay 15 \
+--display_port 8091 \
+--batchSize 10 \
+--gpu_ids 0,1 \
+--name depth_commutative_synthia-cityscapes_512x304_floatdepth_normalized_grayscaledepth_meanstd-depth-synthia=cityscapes \
+--model commutative \
+--shuffle \
+--img_source_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/synthia_rgb_train.txt \
+--img_target_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/cityscapes_rgb_train.txt \
+--lab_source_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/synthia_depth_train.txt \
+--lab_target_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/cityscapes_depth_train.txt  \
+--init_depth_net_filename
+--init_syn2real_net_filename
+--init_real2syn_net_filename
+--crop \
+--cropSize 256 \
+--flip \
+--rotation \
