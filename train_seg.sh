@@ -1,0 +1,18 @@
+python train_seg.py \
+--niter 15 \
+--niter_decay 15 \
+--display_port 8093 \
+--batchSize 20 \
+--gpu_ids 0,1 \
+--name seg__fcn8_synthia_supervised_512x304 \
+--model supervised_seg \
+--shuffle \
+--lr_task 0.001 \
+--img_source_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/synthia_rgb_train.txt \
+--lab_source_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/synthia_labels_train.txt \
+--img_target_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/cityscapes_rgb_val.txt \
+--lab_target_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/cityscapes_labels_val.txt  \
+--crop \
+--cropSize 256 \
+--flip \
+--rotation \

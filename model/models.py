@@ -13,6 +13,9 @@ def create_model(opt):
     elif opt.model == 'test':
         from .test_model import TestModel
         model = TestModel()
+    elif opt.model == 'supervised_seg':
+        from .FCN8sModel import FCN8sModel
+        model = FCN8sModel()
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     model.initialize(opt)
