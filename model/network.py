@@ -7,6 +7,7 @@ from torchvision import models
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
+from .FCN8sNet import fcn8s
 
 ######################################################################################
 # Functions
@@ -140,6 +141,11 @@ def define_featureD(input_nc, n_layers=2, norm='batch', activation='PReLU', init
 
     return init_net(net, init_type, gpu_ids)
 
+
+def define_Seg(init_type='xavier', gpu_ids=[]):
+
+    net = fcn8s()
+    return init_net(net, init_type, gpu_ids)
 
 ######################################################################################
 # Basic Operation

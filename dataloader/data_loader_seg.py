@@ -60,7 +60,21 @@ class CreateDataset(data.Dataset):
                 raise ValueError('Data mode [%s] is not recognized' % self.opt.dataset_mode)
 
             lab_source = Image.open(lab_source_path).convert('L')
+            lab_source = np.array(lab_source)
+            lab_source[lab_source == -1] = 255
+            lab_source[lab_source == 155] = 255
+            lab_source[lab_source == 255] = 19
+            #print("lab_source", lab_source.min(), lab_source.max())
+            lab_source = Image.fromarray(lab_source)
+
             lab_target = Image.open(lab_target_path).convert('L')
+            lab_target = np.array(lab_target)
+            lab_target[lab_target == -1] = 255
+            lab_target[lab_target == 155] = 255
+            lab_target[lab_target == 255] = 19
+            #print("lab_target", lab_target.min(), lab_target.max())
+            lab_target = Image.fromarray(lab_target)
+
 
             if self.opt.crop:
                 random.seed(seed_source)
@@ -123,7 +137,7 @@ def paired_transform(opt, image, depth):
 
 
 def to_tensor_raw(im):
-    return torch.from_numpy(np.array(im, np.int64, copy=False)[np.newaxis, :])
+    return torch.from_numpy(np.array(im, np.int64, copy=False))
 
 
 def get_transform(opt, augment, isRGB, isSynt=True):
@@ -133,7 +147,7 @@ def get_transform(opt, augment, isRGB, isSynt=True):
         if augment & opt.isTrain:
             transforms_list.append(transforms.ColorJitter(brightness=0.0, contrast=0.0, saturation=0.0, hue=0.0))
         transforms_list += [
-            transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         ]
     else:
         transforms_list += [
