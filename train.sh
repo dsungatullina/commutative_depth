@@ -4,7 +4,7 @@ python train.py \
 --display_port 8092 \
 --batchSize 20 \
 --gpu_ids 0,1 \
---name synthia_supervised_512x304_fakecityscapes \
+--name test_run \
 --model supervised \
 --shuffle \
 --img_source_file /media/hpc-4_Raid/dsungatullina/submission/pytorch-CycleGAN-and-pix2pix/fake_cityscapes512x304_epoch5/_lists/fakecityscapes_rgb_train.txt \

@@ -98,12 +98,26 @@ class BaseOptions():
                                  help='size of random crop')
         self.parser.add_argument('--maxRealDepth', type=float, default=473.57,
                                  help='maximum value of depth for real images in meters')
-        self.parser.add_argument('--init_depth_net_filename', type=str, default='',
+        self.parser.add_argument('--init_depth_netG_filename', type=str, default='',
                                  help='absolute path with filename to the pretrained depth net')
+        self.parser.add_argument('--init_syn2real_netG_filename', type=str, default='',
+                                 help='')
+        self.parser.add_argument('--init_syn2real_netD_filename', type=str, default='',
+                                 help='')
+        self.parser.add_argument('--init_real2syn_netG_filename', type=str, default='',
+                                 help='')
+        self.parser.add_argument('--init_real2syn_netD_filename', type=str, default='',
+                                 help='')
         self.parser.add_argument('--mean_depth_synt', type=float, default=0.091)
         self.parser.add_argument('--std_depth_synt', type=float, default=0.246)
         self.parser.add_argument('--mean_depth_real', type=float, default=0.06)
         self.parser.add_argument('--std_depth_real', type=float, default=0.1)
+
+        self.parser.add_argument('--no_dropout', action='store_true',
+                                 help='no dropout to the translation net')
+        self.parser.add_argument('--init_models', action='store_true',
+                                 help='init two translation nets, the task net and discriminator nets if train mode')
+
 
     def parse(self):
         if not self.initialized:

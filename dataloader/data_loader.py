@@ -89,7 +89,7 @@ class CreateDataset(data.Dataset):
             img_target = self.transform_no_augment_img(img_target)
             lab_target = self.transform_no_augment_lab_real(lab_target)
 
-            print(lab_source.size())
+            # print(lab_source.size())
 
             return {'img_source': img_source, 'img_target': img_target,
                     'lab_source': lab_source, 'lab_target': lab_target,

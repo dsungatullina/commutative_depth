@@ -17,6 +17,21 @@ class TNetModel(BaseModel):
         self.visual_names = ['img_s', 'lab_s', 'lab_s_g', 'img_t', 'lab_t', 'lab_t_g']
         self.model_names = ['img2task']
 
+
+        print()
+        print(opt.image_nc)
+        print(opt.label_nc)
+        print(opt.ngf)
+        print(opt.task_layers)
+        print(opt.norm)
+        print(opt.activation)
+        print(opt.task_model_type)
+        print(opt.init_type)
+        print(opt.drop_rate)
+        print(opt.gpu_ids)
+        print(opt.U_weight)
+        print()
+
         # define the task network
         self.net_img2task = network.define_G(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
                                            opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
