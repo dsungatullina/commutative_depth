@@ -1,8 +1,8 @@
 python train.py \
 --niter 15 \
 --niter_decay 15 \
---display_port 8091 \
---batchSize 10 \
+--display_port 8093 \
+--batchSize 2 \
 --gpu_ids 0,1 \
 --name depth_commutative_synthia-cityscapes_512x304 \
 --model commutative \
@@ -20,5 +20,5 @@ python train.py \
 --init_R2S_netG_filename /media/hpc-4_Raid/dsungatullina/submission/pytorch-commutative/init_models/5_net_G_B.pth \
 --init_R2S_netD_filename /media/hpc-4_Raid/dsungatullina/submission/pytorch-commutative/init_models/5_net_D_B.pth \
 --init_S2R_netG_filename /media/hpc-4_Raid/dsungatullina/submission/pytorch-commutative/init_models/5_net_G_A.pth \
---init_S2R_netD_filename /media/hpc-4_Raid/dsungatullina/submission/pytorch-commutative/init_models/5_net_D_A.pth\
+--init_S2R_netD_filename /media/hpc-4_Raid/dsungatullina/submission/pytorch-commutative/init_models/5_net_D_A.pth \
 

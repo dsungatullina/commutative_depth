@@ -1,42 +1,35 @@
 import torch
-from torch.autograd import Variable
+import itertools
 import util.task as task
+from torch.autograd import Variable
 from .base_model import BaseModel
+from util.image_pool import ImagePool
 from . import network
 from . import networks_cg
-from util.image_pool import ImagePool
 
 
 class CommutativeModel(BaseModel):
     def name(self):
         return 'Commutative Model'
 
-    @staticmethod
-    def modify_commandline_options(parser, is_train=True):
-        if is_train:
-            # CycleGAN lambdas
-            parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
-            parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
-            parser.add_argument('--lambda_identity', type=float, default=0.5, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
-        return parser
-
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
 
-  #      self.loss_names = ['lab_s', 'lab_t']
+        self.loss_names = ['G_R2S', 'G_S2R', 'D_S', 'D_R', 'cycle_S', 'cycle_R']
         self.visual_names_S = ['img_s', 'fake_img_r', 'gen_depth_s', 'depth_s']
         self.visual_names_R = ['img_r', 'fake_img_s', 'gen_depth_r', 'depth_r']
+        self.visual_names_OTHERS = ['rec_img_r', 'rec_img_s', 'idt_img_r', 'idt_img_s']
         if self.isTrain:
             self.model_names = ['Depth', 'S2R', 'R2S', 'D_S', 'D_R']
         else:
             self.model_names = ['Depth', 'S2R', 'R2S']
 
-        self.visual_names = self.visual_names_S + self.visual_names_R
+        self.visual_names = self.visual_names_S + self.visual_names_R + self.visual_names_OTHERS
 
         # define the task network
         self.net_Depth = network.define_G(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
                                            opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
-                                           False, opt.gpu_ids, opt.U_weight)
+                                           False, self.gpu_ids, opt.U_weight)
         #define the S->R and R->S networks
         self.net_S2R = networks_cg.define_G(opt.image_nc, opt.image_nc, opt.ngf, 'resnet_9blocks', norm='instance',
                                                  gpu_ids=self.gpu_ids)
@@ -87,21 +80,36 @@ class CommutativeModel(BaseModel):
 
                 print('Discriminator nets loaded')
 
-        if self.isTrain:
+            # create image buffers to store previously generated images
             self.fake_img_s_pool = ImagePool(opt.batchSize)
             self.fake_img_r_pool = ImagePool(opt.batchSize)
-            # define loss functions
-            
-            self.l1loss = torch.nn.L1Loss()
-            self.l2loss = torch.nn.MSELoss()
 
-            self.optimizer_T = torch.optim.Adam(self.net_Depth.parameters(), lr=opt.lr_task,
-                                                       betas=(0.9, 0.999))
+            # define loss functions
+                # cyclegan losses
+            self.criterionGAN = networks_cg.GANLoss(self.opt.gan_mode).to(self.device)  # define GAN loss.
+            self.criterionCycle = torch.nn.L1Loss()
+            self.criterionIdt = torch.nn.L1Loss()
+                # depth losses
+            self.crtiterionComDS2R = torch.nn.L1Loss()
+            self.crtiterionComDR2S = torch.nn.L1Loss()
+
+            # define optimizers
+            self.optimizer_T2 = torch.optim.Adam(
+                [{'params': self.net_Depth.parameters(), 'lr': opt.lr_task, 'betas': (0.95, 0.999)},
+                 {'params': itertools.chain(self.net_S2R.parameters(), self.net_R2S.parameters())}
+                ],
+                lr=opt.lr_trans, betas=(0.5, 0.9))
+
+            self.optimizer_D = torch.optim.Adam(
+                itertools.chain(self.net_D_S.parameters(), self.net_D_R.parameters()),
+                lr=opt.lr_trans, betas=(0.5, 0.9))
 
             self.optimizers = []
             self.schedulers = []
 
-            self.optimizers.append(self.optimizer_T)
+            self.optimizers.append(self.optimizer_T2)
+            self.optimizers.append(self.optimizer_D)
+
             for optimizer in self.optimizers:
                 self.schedulers.append(network.get_scheduler(optimizer, opt))
 
@@ -135,9 +143,9 @@ class CommutativeModel(BaseModel):
         self.rec_img_s = self.net_R2S(self.fake_img_r)
         self.rec_img_r = self.net_S2R(self.fake_img_s)
 
-        if opt.lambda_identity > 0.0:
-            self.idt_img_s = self.net_R2S(self.img_s)
-            self.idt_img_r = self.net_S2R(self.img_r)
+        # identity term
+        self.idt_img_s = self.net_R2S(self.img_s)
+        self.idt_img_r = self.net_S2R(self.img_r)
 
         self.gen_depth_s = self.net_Depth(self.img_s)
         self.gen_depth_r = self.net_Depth(self.img_r)
@@ -157,60 +165,52 @@ class CommutativeModel(BaseModel):
         loss_D.backward()
         return loss_D
 
+    def backward_D_S(self):
+        fake_s = self.fake_img_s_pool.query(self.fake_img_s)
+        self.loss_D_S = self.backward_D_basic(self.net_D_S, self.img_s, fake_s)
 
-    # def foreward_G_basic(self, net_G, img_s, img_t):
-    #
-    #     img = torch.cat([img_s, img_t], 0)
-    #     fake = net_G(img)
-    #
-    #     size = len(fake)
-    #
-    #     f_s, f_t = fake[0].chunk(2)
-    #     img_fake = fake[1:]
-    #
-    #     img_s_fake = []
-    #     img_t_fake = []
-    #
-    #     for img_fake_i in img_fake:
-    #         img_s, img_t = img_fake_i.chunk(2)
-    #         img_s_fake.append(img_s)
-    #         img_t_fake.append(img_t)
-    #
-    #     return img_s_fake, img_t_fake, f_s, f_t, size
-    #
-    # def backward_task(self):
-    #
-    #     self.lab_s_g, self.lab_t_g, self.lab_f_s, self.lab_f_t, size = \
-    #         self.foreward_G_basic(self.net_Depth, self.img_s, self.img_t)
-    #
-    #     lab_real = task.scale_pyramid(self.lab_s, size-1)
-    #     task_loss = 0
-    #     for (lab_fake_i, lab_real_i) in zip(self.lab_s_g, lab_real):
-    #         task_loss += self.l1loss(lab_fake_i, lab_real_i)
-    #
-    #     self.loss_lab_s = task_loss * self.opt.lambda_rec_lab
-    #
-    #     img_real = task.scale_pyramid(self.img_t, size-1)
-    #     self.loss_lab_smooth = task.get_smooth_weight(self.lab_t_g, img_real, size-1) * self.opt.lambda_smooth
-    #
-    #     # total_loss = self.loss_lab_s + self.loss_lab_smooth
-    #     total_loss = task_loss
-    #
-    #     total_loss.backward()
-    #
-    # def optimize_parameters(self, epoch_iter):
-    #
-    #     self.forward()
-    #     # task network
-    #     self.optimizer_T.zero_grad()
-    #     self.backward_task()
-    #     self.optimizer_T.step()
-    #
-    # def validation_target(self):
-    #
-    #     lab_real = task.scale_pyramid(self.lab_t, len(self.lab_t_g))
-    #     task_loss = 0
-    #     for (lab_fake_i, lab_real_i) in zip(self.lab_t_g, lab_real):
-    #         task_loss += self.l1loss(lab_fake_i, lab_real_i)
-    #
-    #     self.loss_lab_t = task_loss * self.opt.lambda_rec_lab
+    def backward_D_R(self):
+        fake_r = self.fake_img_r_pool.query(self.fake_img_r)
+        self.loss_D_R = self.backward_D_basic(self.net_D_R, self.img_r, fake_r)
+
+    def backward_G(self):
+        # CycleGAN loss
+        lambda_idt = self.opt.lambda_identity
+        lambda_S = self.opt.lambda_S    # syn
+        lambda_R = self.opt.lambda_R    # real
+        # GAN loss D_A(G_A(A))
+        self.loss_G_R2S = self.criterionGAN(self.net_D_S(self.fake_img_s), True)
+        # GAN loss D_B(G_B(B))
+        self.loss_G_S2R = self.criterionGAN(self.net_D_R(self.fake_img_r), True)
+        # Forward cycle loss || G_B(G_A(A)) - A||
+        self.loss_cycle_S = self.criterionCycle(self.rec_img_s, self.img_s) * lambda_S
+        # Backward cycle loss || G_A(G_B(B)) - B||
+        self.loss_cycle_R = self.criterionCycle(self.rec_img_r, self.img_r) * lambda_R
+
+        # Identity loss
+        if lambda_idt > 0:
+            self.loss_idt_S = self.criterionIdt(self.idt_img_s, self.img_s) * lambda_S * lambda_idt
+            self.loss_idt_R = self.criterionIdt(self.idt_img_r, self.img_r) * lambda_R * lambda_idt
+        else:
+            self.loss_idt_S = 0
+            self.loss_idt_R = 0
+
+        # combined loss and calculate gradients
+        self.loss_G = self.loss_G_R2S + self.loss_G_S2R + self.loss_cycle_S + self.loss_cycle_R + self.loss_idt_S + self.loss_idt_R
+        self.loss_G.backward()
+
+    def optimize_parameters(self, epoch_iter):
+        """Calculate losses, gradients, and update network weights; called in every training iteration"""
+        # forward
+        self.forward()  # compute fake images and reconstruction images.
+        # G_A and G_B
+        self.set_requires_grad([self.net_D_S, self.net_D_R], False)  # Ds require no gradients when optimizing Gs
+        self.optimizer_T2.zero_grad()  # set G_A and G_B's gradients to zero
+        self.backward_G()  # calculate gradients for G_A and G_B
+        self.optimizer_T2.step()  # update G_A and G_B's weights
+        # D_A and D_B
+        self.set_requires_grad([self.net_D_S, self.net_D_R], True)
+        self.optimizer_D.zero_grad()  # set D_A and D_B's gradients to zero
+        self.backward_D_S()  # calculate gradients for D_A
+        self.backward_D_R()  # calculate graidents for D_B
+        self.optimizer_D.step()  # update D_A and D_B's weights

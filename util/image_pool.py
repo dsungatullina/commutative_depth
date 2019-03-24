@@ -18,7 +18,7 @@ class ImagePool():
         for image in images:
             image = torch.unsqueeze(image, 0)
             if self.num_imgs < self.pool_size:
-                self.num_imgs += 1
+                self.num_imgs = self.num_imgs + 1
                 self.images.append(image)
                 return_images.append(image)
             else:
