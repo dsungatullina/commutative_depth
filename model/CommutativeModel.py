@@ -15,16 +15,16 @@ class CommutativeModel(BaseModel):
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
 
-        self.loss_names = ['G_R2S', 'G_S2R', 'D_S', 'D_R', 'cycle_S', 'cycle_R']
-        self.visual_names_S = ['img_s', 'fake_img_r', 'gen_depth_s', 'depth_s']
-        self.visual_names_R = ['img_r', 'fake_img_s', 'gen_depth_r', 'depth_r']
+        self.loss_names = ['G_R2S', 'G_S2R', 'D_S', 'D_R', 'cycle_S', 'cycle_R', 'com_S', 'com_R', 'l1_DS']
+        self.visual_names_S = ['img_s', 'fake_img_r', 'gen_depth_s', 'depth_s', 'gen_depth_fake_r']
+        self.visual_names_R = ['img_r', 'fake_img_s', 'gen_depth_r', 'depth_r', 'gen_depth_fake_s']
         self.visual_names_OTHERS = ['rec_img_r', 'rec_img_s', 'idt_img_r', 'idt_img_s']
         if self.isTrain:
             self.model_names = ['Depth', 'S2R', 'R2S', 'D_S', 'D_R']
         else:
             self.model_names = ['Depth', 'S2R', 'R2S']
 
-        self.visual_names = self.visual_names_S + self.visual_names_R + self.visual_names_OTHERS
+        self.visual_names = self.visual_names_S + self.visual_names_R
 
         # define the task network
         self.net_Depth = network.define_G(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
@@ -90,10 +90,21 @@ class CommutativeModel(BaseModel):
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
                 # depth losses
-            self.crtiterionComDS2R = torch.nn.L1Loss()
-            self.crtiterionComDR2S = torch.nn.L1Loss()
+            self.crtiterionCom_DS2R_DS = torch.nn.L1Loss()
+            self.crtiterionCom_DR2S_DR = torch.nn.L1Loss()
+            self.crtiterionCom_DS_DS2R = torch.nn.L1Loss()
+            self.crtiterionCom_DR_DR2S = torch.nn.L1Loss()
+            self.crtiterionCom_D_DS = torch.nn.L1Loss()
 
             # define optimizers
+            # self.optimizer_T2 = torch.optim.Adam(itertools.chain(self.net_Depth.parameters(), self.net_S2R.parameters(),
+            #                                                      self.net_R2S.parameters()),
+            #                                     lr=0.0002, betas=(0.5, 0.9))
+            #
+            # self.optimizer_D = torch.optim.Adam(
+            #     itertools.chain(self.net_D_S.parameters(), self.net_D_R.parameters()),
+            #     lr=0.0002, betas=(0.5, 0.9))
+
             self.optimizer_T2 = torch.optim.Adam(
                 [{'params': self.net_Depth.parameters(), 'lr': opt.lr_task, 'betas': (0.95, 0.999)},
                  {'params': itertools.chain(self.net_S2R.parameters(), self.net_R2S.parameters())}
@@ -197,7 +208,87 @@ class CommutativeModel(BaseModel):
 
         # combined loss and calculate gradients
         self.loss_G = self.loss_G_R2S + self.loss_G_S2R + self.loss_cycle_S + self.loss_cycle_R + self.loss_idt_S + self.loss_idt_R
-        self.loss_G.backward()
+        #self.loss_G.backward()
+
+        ####
+        # tmp1 = self.gen_depth_s[4].clone()
+        # self.loss_DS2R_DS = self.crtiterionCom_DS2R_DS(self.gen_depth_fake_r[4], tmp1.detach())
+        # tmp2 = self.gen_depth_fake_r[4].clone()
+        # self.loss_DS_DS2R = self.crtiterionCom_DR2S_DR(self.gen_depth_s[4], tmp2.detach())
+        # self.loss_com_S =  0.5 * (self.loss_DS2R_DS + self.loss_DS_DS2R) * self.opt.lambda_com_S
+        #
+        # tmp3 = self.gen_depth_r[4].clone()
+        # self.loss_DR2S_DR = self.crtiterionCom_DS_DS2R(self.gen_depth_fake_s[4], tmp3.detach())
+        # tmp4 = self.gen_depth_fake_s[4].clone()
+        # self.loss_DR_DR2S =  self.crtiterionCom_DR_DR2S(self.gen_depth_r[4], tmp4.detach())
+        # self.loss_com_R = 0.5 * (self.loss_DR2S_DR + self.loss_DR_DR2S) * self.opt.lambda_com_R
+        #
+        # self.loss_D_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
+        # self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
+
+        if self.opt.com_loss == 'usual':
+            print('usual com!!!')
+            # com S
+            loss_com_S = torch.mean(torch.abs(self.gen_depth_fake_r[4] - self.gen_depth_s[4]))
+            self.loss_com_S = loss_com_S * self.opt.lambda_com_S
+            # com R
+            loss_com_R = torch.mean(torch.abs(self.gen_depth_fake_s[4] - self.gen_depth_r[4]))
+            self.loss_com_R = loss_com_R * self.opt.lambda_com_R
+        elif self.opt.com_loss == 'pyramid':
+            print('pyramid com!!!')
+            # com S
+            loss_com_S = 0.0
+            for (i_gen_depth_fake_r, i_gen_depth_s) in zip(self.gen_depth_fake_r, self.gen_depth_s):
+                loss_com_S = loss_com_S + torch.mean(torch.abs(i_gen_depth_fake_r - i_gen_depth_s))
+            self.loss_com_S = loss_com_S * self.opt.lambda_com_S
+            # com R
+            loss_com_R = 0.0
+            for (i_gen_depth_fake_s, i_gen_depth_r) in zip(self.gen_depth_fake_s, self.gen_depth_r):
+                loss_com_R = loss_com_R + torch.mean(torch.abs(i_gen_depth_fake_s - i_gen_depth_r))
+            self.loss_com_R = loss_com_R * self.opt.lambda_com_R
+        else:
+            raise ValueError('Unknown commutative loss type.')
+
+        # l1 depth syn
+        if self.opt.l1syndepth_loss == 'usual':
+            print('usual l1!!!')
+            loss_l1_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
+            self.loss_l1_DS = loss_l1_DS * self.opt.lambda_l1_DS
+        elif self.opt.l1syndepth_loss == 'pyramid':
+            print('pyramid l1!!!')
+            size = len(self.gen_depth_fake_r)
+            depth_syn = task.scale_pyramid(self.depth_s, size)
+            loss_l1_DS = 0.0
+            for (i_gen_depth_s, i_depth_syn) in zip(self.gen_depth_s, depth_syn):
+                loss_l1_DS = loss_l1_DS + self.crtiterionCom_D_DS(i_gen_depth_s, i_depth_syn)
+            self.loss_l1_DS = loss_l1_DS * self.opt.lambda_l1_DS
+        else:
+            raise ValueError('Unknown depth l1 loss type.')
+
+        # task loss
+        self.loss_T = self.loss_com_S + self.loss_com_R + self.loss_l1_DS
+        # total loss
+        self.loss_total = self.loss_G * self.opt.lambda_cycle + self.loss_T
+        self.loss_total.backward()
+
+    # def backward_T(self):
+    #     tmp1 = self.gen_depth_s[4].clone()
+    #     self.loss_DS2R_DS = self.crtiterionCom_DS2R_DS(self.gen_depth_fake_r[4], tmp1.detach())
+    #     tmp2 = self.gen_depth_fake_r[4].clone()
+    #     self.loss_DS_DS2R = self.crtiterionCom_DR2S_DR(self.gen_depth_s[4], tmp2.detach())
+    #     self.loss_com_S =  0.5 * (self.loss_DS2R_DS + self.loss_DS_DS2R) * self.opt.lambda_com_S
+    #
+    #     tmp3 = self.gen_depth_r[4].clone()
+    #     self.loss_DR2S_DR = self.crtiterionCom_DS_DS2R(self.gen_depth_fake_s[4], tmp3.detach())
+    #     tmp4 = self.gen_depth_fake_s[4].clone()
+    #     self.loss_DR_DR2S =  self.crtiterionCom_DR_DR2S(self.gen_depth_r[4], tmp4.detach())
+    #     self.loss_com_R = 0.5 * (self.loss_DR2S_DR + self.loss_DR_DR2S) * self.opt.lambda_com_R
+    #
+    #     self.loss_D_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
+    #     self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
+    #
+    #     self.loss_T = self.loss_com_S + self.loss_com_R + self.loss_l1_DS
+    #     self.loss_T.backward()
 
     def optimize_parameters(self, epoch_iter):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
@@ -207,6 +298,7 @@ class CommutativeModel(BaseModel):
         self.set_requires_grad([self.net_D_S, self.net_D_R], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_T2.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()  # calculate gradients for G_A and G_B
+#        self.backward_T()  # calculate gradients for G_T
         self.optimizer_T2.step()  # update G_A and G_B's weights
         # D_A and D_B
         self.set_requires_grad([self.net_D_S, self.net_D_R], True)
