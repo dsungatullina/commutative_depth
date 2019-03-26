@@ -227,7 +227,6 @@ class CommutativeModel(BaseModel):
         # self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
 
         if self.opt.com_loss == 'usual':
-            print('usual com!!!')
             # com S
             loss_com_S = torch.mean(torch.abs(self.gen_depth_fake_r[4] - self.gen_depth_s[4]))
             self.loss_com_S = loss_com_S * self.opt.lambda_com_S
@@ -235,7 +234,6 @@ class CommutativeModel(BaseModel):
             loss_com_R = torch.mean(torch.abs(self.gen_depth_fake_s[4] - self.gen_depth_r[4]))
             self.loss_com_R = loss_com_R * self.opt.lambda_com_R
         elif self.opt.com_loss == 'pyramid':
-            print('pyramid com!!!')
             # com S
             loss_com_S = 0.0
             for (i_gen_depth_fake_r, i_gen_depth_s) in zip(self.gen_depth_fake_r, self.gen_depth_s):
@@ -251,11 +249,9 @@ class CommutativeModel(BaseModel):
 
         # l1 depth syn
         if self.opt.l1syndepth_loss == 'usual':
-            print('usual l1!!!')
             loss_l1_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
             self.loss_l1_DS = loss_l1_DS * self.opt.lambda_l1_DS
         elif self.opt.l1syndepth_loss == 'pyramid':
-            print('pyramid l1!!!')
             size = len(self.gen_depth_fake_r)
             depth_syn = task.scale_pyramid(self.depth_s, size)
             loss_l1_DS = 0.0
