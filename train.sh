@@ -1,3 +1,7 @@
+#!/bin/sh
+module load gpu/cuda-9.0
+module load python/anaconda3
+source activate python3.5-env 
 python train.py \
 --niter 15 \
 --niter_decay 15 \
