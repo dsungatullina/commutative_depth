@@ -30,6 +30,11 @@ class CommutativeModel(BaseModel):
         self.net_Depth = network.define_G(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
                                            opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
                                            False, self.gpu_ids, opt.U_weight)
+        print('PARAMS!!')
+        print(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
+                                           opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
+                                           False, self.gpu_ids, opt.U_weight)
+        print('PARAMS!!')
         #define the S->R and R->S networks
         self.net_S2R = networks_cg.define_G(opt.image_nc, opt.image_nc, opt.ngf, 'resnet_9blocks', norm='instance',
                                                  gpu_ids=self.gpu_ids)

@@ -2,8 +2,8 @@ python train.py \
 --niter 15 \
 --niter_decay 15 \
 --display_port 8091 \
---batchSize 2 \
---gpu_ids 0,1 \
+--batchSize 1 \
+--gpu_ids 0 \
 --name depth_commutative_synthia-cityscapes_512x304_usual-losses \
 --model commutative \
 --img_source_file /media/hpc-4_Raid/dsungatullina/transfer-to-zhores/_lists_512/synthia_rgb_train.txt \

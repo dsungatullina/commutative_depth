@@ -64,7 +64,6 @@ class CreateDataset(data.Dataset):
             lab_source[lab_source == -1] = 255
             lab_source[lab_source == 155] = 255
             lab_source[lab_source == 255] = 19
-            #print("lab_source", lab_source.min(), lab_source.max())
             lab_source = Image.fromarray(lab_source)
 
             lab_target = Image.open(lab_target_path).convert('L')
@@ -72,9 +71,7 @@ class CreateDataset(data.Dataset):
             lab_target[lab_target == -1] = 255
             lab_target[lab_target == 155] = 255
             lab_target[lab_target == 255] = 19
-            #print("lab_target", lab_target.min(), lab_target.max())
             lab_target = Image.fromarray(lab_target)
-
 
             if self.opt.crop:
                 random.seed(seed_source)
@@ -90,6 +87,12 @@ class CreateDataset(data.Dataset):
 
             img_target = self.transform_no_augment_img(img_target)
             lab_target = self.transform_no_augment_lab_real(lab_target)
+
+            print("lab_source", lab_source.min(), lab_source.max())
+            print("lab_target", lab_target.min(), lab_target.max())
+            print("img_source", img_source.min(), img_source.max())
+            print("img_target", img_target.min(), img_target.max())
+
 
             return {'img_source': img_source, 'img_target': img_target,
                     'lab_source': lab_source, 'lab_target': lab_target,
@@ -144,8 +147,11 @@ def get_transform(opt, augment, isRGB, isSynt=True):
     transforms_list = []
 
     if isRGB:
-        if augment & opt.isTrain:
-            transforms_list.append(transforms.ColorJitter(brightness=0.0, contrast=0.0, saturation=0.0, hue=0.0))
+        # if augment & opt.isTrain:
+        #     transforms_list.append(transforms.ColorJitter(brightness=0.0, contrast=0.0, saturation=0.0, hue=0.0))
+        # transforms_list += [
+        #     transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        # ]
         transforms_list += [
             transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
         ]

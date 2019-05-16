@@ -1,11 +1,12 @@
+python -m visdom.server -port 8093 &
 python train_seg.py \
 --display_id -1 \
 --no_html \
 --niter 15 \
 --niter_decay 15 \
 --display_port 8093 \
---batchSize 16 \
---gpu_ids 0,1 \
+--batchSize 8 \
+--gpu_ids 0 \
 --name seg__fcn8_cityscapes_supervised_512x304_0.1 \
 --model supervised_seg \
 --shuffle \

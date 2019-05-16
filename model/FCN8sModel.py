@@ -91,8 +91,8 @@ class FCN8sModel(BaseModel):
         self.img_s = Variable(self.img_source)
         self.fake_lab_s = self.net_img2task(self.img_s)
         self.fake_lab_s = self.fake_lab_s.clamp(min=0.0, max=19.0)
-        print("self.fake_lab_s", self.fake_lab_s.min(), self.fake_lab_s.max())
-        print("self.lab_s", self.lab_source.min(), self.lab_source.max())
+        # print("self.fake_lab_s", self.fake_lab_s.min(), self.fake_lab_s.max())
+        # print("self.lab_s", self.lab_source.min(), self.lab_source.max())
 
     def backward_task(self):
 
