@@ -1,0 +1,15 @@
+python train.py \
+--niter 10 \
+--niter_decay 10 \
+--display_port 8091 \
+--batchSize 20 \
+--gpu_ids 0,1 \
+--name synthia_supervised_512x304_smooth \
+--model supervised \
+--img_source_file /media/hpc4_Raid/data/SYNTHIA/RAND_CITYSCAPES/lists_512x304/train_rgb.txt \
+--img_target_file /media/hpc4_Raid/data/SYNTHIA/RAND_CITYSCAPES/lists_512x304/test_rgb.txt  \
+--lab_source_file /media/hpc4_Raid/data/SYNTHIA/RAND_CITYSCAPES/lists_512x304/train_depth.txt \
+--lab_target_file /media/hpc4_Raid/data/SYNTHIA/RAND_CITYSCAPES/lists_512x304/test_depth.txt  \
+--shuffle \
+--flip \
+--rotation \

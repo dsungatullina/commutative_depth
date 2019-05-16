@@ -12,8 +12,8 @@ class TNetModel(BaseModel):
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
 
-        # self.loss_names = ['lab_s', 'lab_t', 'lab_smooth']
-        self.loss_names = ['lab_s', 'lab_t']
+        self.loss_names = ['lab_s', 'lab_t', 'lab_smooth']
+        # self.loss_names = ['lab_s', 'lab_t']
         self.visual_names = ['img_s', 'lab_s', 'lab_s_g', 'img_t', 'lab_t', 'lab_t_g']
         self.model_names = ['img2task']
 
@@ -95,8 +95,8 @@ class TNetModel(BaseModel):
         img_real = task.scale_pyramid(self.img_t, size - 1)
         self.loss_lab_smooth = task.get_smooth_weight(self.lab_t_g, img_real, size - 1) * self.opt.lambda_smooth
 
-        # total_loss = self.loss_lab_s + self.loss_lab_smooth
-        total_loss = task_loss
+        total_loss = self.loss_lab_s + self.loss_lab_smooth
+        #total_loss = task_loss
 
         total_loss.backward()
 

@@ -41,15 +41,8 @@ class CreateDataset(data.Dataset):
         img_source = Image.open(img_source_path).convert('RGB')
         img_target = Image.open(img_target_path).convert('RGB')
 
-        if self.opt.resize:
-            resize_transform = transforms.Resize((192,640), interpolation=Image.LANCZOS)
-            img_source = resize_transform(img_source)
-            img_target = resize_transform(img_target) 
-
         if self.opt.crop:
-            # crop_size = self.opt.cropSize
-            crop_size = (192, 256)
-            crop_transform = transforms.RandomCrop(crop_size)
+            crop_transform = transforms.RandomCrop(self.opt.cropSize)
             seed_source = random.randint(0, 2 ** 32)
             random.seed(seed_source)
             img_source = crop_transform(img_source)
@@ -81,24 +74,15 @@ class CreateDataset(data.Dataset):
 
             # option 1
             thr = 50.0
-            lab_source = cv2.imread(lab_source_path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-            lab_source = lab_source / 100.0
+            lab_source = cv2.imread(lab_source_path, cv2.IMREAD_UNCHANGED)
             lab_source[lab_source > thr] = thr
-
-            lab_target = np.zeros(lab_source.shape)
-            lab_target = Image.fromarray(lab_target.astype(np.uint8))
-            lab_target = lab_target.convert('L')
-            
             lab_source = Image.fromarray(lab_source.astype(np.uint8))
             lab_source = lab_source.convert('L')
-            
 
-
-            ##lab_target = cv2.imread(lab_target_path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-            ##lab_target = lab_target / 100.0
-            ##lab_target[lab_target > thr] = thr
-            ##lab_target = Image.fromarray(lab_target.astype(np.uint8))
-            ##lab_target = lab_target.convert('L')
+            lab_target = cv2.imread(lab_target_path, cv2.IMREAD_UNCHANGED)
+            lab_target[lab_target > thr] = thr
+            lab_target = Image.fromarray(lab_target.astype(np.uint8))
+            lab_target = lab_target.convert('L')
 
             ## option 2
             #lab_source = cv2.imread(lab_source_path, cv2.IMREAD_UNCHANGED)
@@ -125,11 +109,7 @@ class CreateDataset(data.Dataset):
             #lab_target = (lab_target / self.opt.maxRealDepth) * 255
             #lab_target = Image.fromarray(lab_target.astype(np.uint8))
             #lab_target = lab_target.convert('L')
-            if self.opt.resize: 
-                resize_transform = transforms.Resize((192,640), interpolation=Image.NEAREST)
-                lab_source = resize_transform(lab_source)
-                lab_target = resize_transform(lab_target)
-  
+
             if self.opt.crop:
                 random.seed(seed_source)
                 lab_source = crop_transform(lab_source)
