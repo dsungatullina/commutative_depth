@@ -5,8 +5,8 @@ def create_model(opt):
         from .T2model import T2NetModel
         model = T2NetModel()
     elif opt.model == 'supervised':
-        from .TaskModel import TNetModel
-        model = TNetModel()
+        import TaskModel 
+        model = TaskModel.TNetModel()
     elif opt.model == 'commutative':
         from .CommutativeModel import CommutativeModel
         model = CommutativeModel()

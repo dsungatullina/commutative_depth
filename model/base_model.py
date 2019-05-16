@@ -1,10 +1,10 @@
 import os
 import torch
 from collections import OrderedDict
-from abc import ABC, abstractmethod
+#from abc import ABC, abstractmethod
 from util import util
 
-class BaseModel(ABC):
+class BaseModel():
     def name(self):
         return 'BaseModel'
 

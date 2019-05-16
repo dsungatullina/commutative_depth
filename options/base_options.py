@@ -32,7 +32,7 @@ class BaseOptions():
                                  help='training label for target domain')
         self.parser.add_argument('--dataset_mode', type=str, default='paired',
                                  help='chooses how datasets are loaded. [paired| unpaired]')
-        self.parser.add_argument('--loadSize', type=list, default=[640, 192],
+        self.parser.add_argument('--load_size', type=tuple, default=(192, 640),
                                  help='load image into same size [256, 192]|[640, 192]')
         self.parser.add_argument('--flip', action='store_true',
                                  help='if specified, do flip the image for data augmentation')
@@ -117,6 +117,9 @@ class BaseOptions():
                                  help='no dropout to the translation net')
         self.parser.add_argument('--init_models', action='store_true',
                                  help='init two translation nets, the task net and discriminator nets if train mode')
+        self.parser.add_argument('--resize', action='store_true',
+help='resize data to the loadSize')
+
 
 
     def parse(self):
