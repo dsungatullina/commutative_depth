@@ -30,11 +30,12 @@ class CommutativeModel(BaseModel):
         self.net_Depth = network.define_G(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
                                            opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
                                            False, self.gpu_ids, opt.U_weight)
-        print('PARAMS!!')
-        print(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
-                                           opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
-                                           False, self.gpu_ids, opt.U_weight)
-        print('PARAMS!!')
+
+        # print('PARAMS!!')
+        # print(opt.image_nc, opt.label_nc, opt.ngf, opt.task_layers, opt.norm,
+        #                                    opt.activation, opt.task_model_type, opt.init_type, opt.drop_rate,
+        #                                    False, self.gpu_ids, opt.U_weight)
+        # print('PARAMS!!')
         #define the S->R and R->S networks
         self.net_S2R = networks_cg.define_G(opt.image_nc, opt.image_nc, opt.ngf, 'resnet_9blocks', norm='instance',
                                                  gpu_ids=self.gpu_ids)
@@ -44,6 +45,7 @@ class CommutativeModel(BaseModel):
         if opt.init_models:
             # load task net
             self.net_Depth.load_state_dict(torch.load(opt.init_Depth_netG_filename))
+            self.net_Depth = torch.nn.DataParallel(self.net_Depth, self.gpu_ids)
 
             # load S2R net
             if isinstance(self.net_S2R, torch.nn.DataParallel):
@@ -52,6 +54,7 @@ class CommutativeModel(BaseModel):
             if hasattr(state_dict, '_metadata'):
                 del state_dict._metadata
             self.net_S2R.load_state_dict(state_dict)
+            self.net_S2R = torch.nn.DataParallel(self.net_S2R, self.gpu_ids)
             # self.net_S2R.load_state_dict(torch.load(opt.init_syn2real_netG_filename))
 
             # load R2S net
@@ -61,6 +64,7 @@ class CommutativeModel(BaseModel):
             if hasattr(state_dict, '_metadata'):
                 del state_dict._metadata
             self.net_R2S.load_state_dict(state_dict)
+            self.net_R2S = torch.nn.DataParallel(self.net_R2S, self.gpu_ids)
 
             print('Translators and the task net loaded')
 
@@ -75,6 +79,7 @@ class CommutativeModel(BaseModel):
                 if hasattr(state_dict, '_metadata'):
                     del state_dict._metadata
                 self.net_D_S.load_state_dict(state_dict)
+                self.net_D_S = torch.nn.DataParallel(self.net_D_S, self.gpu_ids)
 
                 if isinstance(self.net_D_R, torch.nn.DataParallel):
                     self.net_D_R = self.net_D_R.module
@@ -82,6 +87,7 @@ class CommutativeModel(BaseModel):
                 if hasattr(state_dict, '_metadata'):
                     del state_dict._metadata
                 self.net_D_R.load_state_dict(state_dict)
+                self.net_D_R = torch.nn.DataParallel(self.net_D_R, self.gpu_ids)
 
                 print('Discriminator nets loaded')
 
@@ -189,7 +195,7 @@ class CommutativeModel(BaseModel):
         fake_r = self.fake_img_r_pool.query(self.fake_img_r)
         self.loss_D_R = self.backward_D_basic(self.net_D_R, self.img_r, fake_r)
 
-    def backward_G(self):
+    def backward_G_cycle(self):
         # CycleGAN loss
         lambda_idt = self.opt.lambda_identity
         lambda_S = self.opt.lambda_S    # syn
@@ -212,25 +218,13 @@ class CommutativeModel(BaseModel):
             self.loss_idt_R = 0
 
         # combined loss and calculate gradients
-        self.loss_G = self.loss_G_R2S + self.loss_G_S2R + self.loss_cycle_S + self.loss_cycle_R + self.loss_idt_S + self.loss_idt_R
-        #self.loss_G.backward()
+        self.loss_G = self.loss_G_R2S + self.loss_G_S2R + self.loss_cycle_S \
+                      + self.loss_cycle_R + self.loss_idt_S + self.loss_idt_R
+        self.loss_G = self.loss_G * self.opt.lambda_cycle
+        self.loss_G.backward(retain_graph=True)
 
-        ####
-        # tmp1 = self.gen_depth_s[4].clone()
-        # self.loss_DS2R_DS = self.crtiterionCom_DS2R_DS(self.gen_depth_fake_r[4], tmp1.detach())
-        # tmp2 = self.gen_depth_fake_r[4].clone()
-        # self.loss_DS_DS2R = self.crtiterionCom_DR2S_DR(self.gen_depth_s[4], tmp2.detach())
-        # self.loss_com_S =  0.5 * (self.loss_DS2R_DS + self.loss_DS_DS2R) * self.opt.lambda_com_S
-        #
-        # tmp3 = self.gen_depth_r[4].clone()
-        # self.loss_DR2S_DR = self.crtiterionCom_DS_DS2R(self.gen_depth_fake_s[4], tmp3.detach())
-        # tmp4 = self.gen_depth_fake_s[4].clone()
-        # self.loss_DR_DR2S =  self.crtiterionCom_DR_DR2S(self.gen_depth_r[4], tmp4.detach())
-        # self.loss_com_R = 0.5 * (self.loss_DR2S_DR + self.loss_DR_DR2S) * self.opt.lambda_com_R
-        #
-        # self.loss_D_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
-        # self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
 
+    def backward_G_task(self):
         if self.opt.com_loss == 'usual':
             # com S
             loss_com_S = torch.mean(torch.abs(self.gen_depth_fake_r[4] - self.gen_depth_s[4]))
@@ -268,28 +262,8 @@ class CommutativeModel(BaseModel):
 
         # task loss
         self.loss_T = self.loss_com_S + self.loss_com_R + self.loss_l1_DS
-        # total loss
-        self.loss_total = self.loss_G * self.opt.lambda_cycle + self.loss_T
-        self.loss_total.backward()
+        self.loss_T.backward()
 
-    # def backward_T(self):
-    #     tmp1 = self.gen_depth_s[4].clone()
-    #     self.loss_DS2R_DS = self.crtiterionCom_DS2R_DS(self.gen_depth_fake_r[4], tmp1.detach())
-    #     tmp2 = self.gen_depth_fake_r[4].clone()
-    #     self.loss_DS_DS2R = self.crtiterionCom_DR2S_DR(self.gen_depth_s[4], tmp2.detach())
-    #     self.loss_com_S =  0.5 * (self.loss_DS2R_DS + self.loss_DS_DS2R) * self.opt.lambda_com_S
-    #
-    #     tmp3 = self.gen_depth_r[4].clone()
-    #     self.loss_DR2S_DR = self.crtiterionCom_DS_DS2R(self.gen_depth_fake_s[4], tmp3.detach())
-    #     tmp4 = self.gen_depth_fake_s[4].clone()
-    #     self.loss_DR_DR2S =  self.crtiterionCom_DR_DR2S(self.gen_depth_r[4], tmp4.detach())
-    #     self.loss_com_R = 0.5 * (self.loss_DR2S_DR + self.loss_DR_DR2S) * self.opt.lambda_com_R
-    #
-    #     self.loss_D_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
-    #     self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
-    #
-    #     self.loss_T = self.loss_com_S + self.loss_com_R + self.loss_l1_DS
-    #     self.loss_T.backward()
 
     def optimize_parameters(self, epoch_iter):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
@@ -298,8 +272,8 @@ class CommutativeModel(BaseModel):
         # G_A and G_B
         self.set_requires_grad([self.net_D_S, self.net_D_R], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_T2.zero_grad()  # set G_A and G_B's gradients to zero
-        self.backward_G()  # calculate gradients for G_A and G_B
-#        self.backward_T()  # calculate gradients for G_T
+        self.backward_G_cycle()  # calculate gradients for G_A and G_B
+        self.backward_G_task()  # calculate gradients for G_T
         self.optimizer_T2.step()  # update G_A and G_B's weights
         # D_A and D_B
         self.set_requires_grad([self.net_D_S, self.net_D_R], True)
