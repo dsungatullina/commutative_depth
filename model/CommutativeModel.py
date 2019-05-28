@@ -270,13 +270,13 @@ class CommutativeModel(BaseModel):
         # forward
         self.forward()  # compute fake images and reconstruction images.
         # G_A and G_B
-        self.set_requires_grad([self.net_D_S, self.net_D_R], False)  # Ds require no gradients when optimizing Gs
+        #self.set_requires_grad([self.net_D_S, self.net_D_R], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_T2.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G_cycle()  # calculate gradients for G_A and G_B
         self.backward_G_task()  # calculate gradients for G_T
         self.optimizer_T2.step()  # update G_A and G_B's weights
         # D_A and D_B
-        self.set_requires_grad([self.net_D_S, self.net_D_R], True)
+        #self.set_requires_grad([self.net_D_S, self.net_D_R], True)
         self.optimizer_D.zero_grad()  # set D_A and D_B's gradients to zero
         self.backward_D_S()  # calculate gradients for D_A
         self.backward_D_R()  # calculate graidents for D_B

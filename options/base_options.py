@@ -30,8 +30,10 @@ class BaseOptions():
                                  help='training label for source domain')
         self.parser.add_argument('--lab_target_file', type=str, default='/data/dataset/Image2Depth_SUN_NYU/trainC.txt',
                                  help='training label for target domain')
-        self.parser.add_argument('--dataset_mode', type=str, default='paired',
+        self.parser.add_argument('--dataset_mode', type=str, default='unpaired',
                                  help='chooses how datasets are loaded. [paired| unpaired]')
+        self.parser.add_argument('--resize', action='store_true',
+                                 help='if specified, resize inputs according to the loadSize')
         self.parser.add_argument('--loadSize', type=list, default=[640, 192],
                                  help='load image into same size [256, 192]|[640, 192]')
         self.parser.add_argument('--flip', action='store_true',
@@ -118,6 +120,9 @@ class BaseOptions():
         self.parser.add_argument('--init_models', action='store_true',
                                  help='init two translation nets, the task net and discriminator nets if train mode')
 
+        # SEGMENTATION ARGUMENTS
+        self.parser.add_argument('--seg_model_name', type=str, default='drn26')
+        self.parser.add_argument('--num_cls', type=int, default=14)
 
     def parse(self):
         if not self.initialized:
