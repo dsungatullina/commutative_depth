@@ -7,8 +7,6 @@ from torchvision import models
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
-#from .FCN8sNet import fcn8s
-
 ######################################################################################
 # Functions
 ######################################################################################

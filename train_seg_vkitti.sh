@@ -12,6 +12,5 @@ python train_seg_vkitti.py \
 --img_source_file  /media/hpc4_Raid/dsungatullina/submission/vkitti-kitti/vkitti/lists_hpc4/vkitti_rgb_all.txt \
 --lab_source_file  /media/hpc4_Raid/dsungatullina/submission/vkitti-kitti/vkitti/lists_hpc4/vkitti_labels_all.txt \
 --lab_target_file '' \
---resize --loadSize [192,640] \
---crop --cropSize 256 \
+--resize --loadSize 192,640 \
 --flip --rotation \

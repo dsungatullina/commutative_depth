@@ -37,7 +37,7 @@ class TrainOptions(BaseOptions):
         # display the results
         self.parser.add_argument('--display_freq', type=int, default=100,
                                  help='frequency of showing training results on screen')
-        self.parser.add_argument('--print_freq', type=int, default=100,
+        self.parser.add_argument('--print_freq', type=int, default=1,
                                  help='frequency of showing training results on console')
         self.parser.add_argument('--save_latest_freq', type=int, default=5000,
                                  help='frequency of saving the latest results')
@@ -70,6 +70,12 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--lambda_cycle', type=float, default=1.0, help='weight for the overall cycle loss in the total loss')
         self.parser.add_argument('--com_loss', type=str, default='usual', help='pyramid|usual')
         self.parser.add_argument('--l1syndepth_loss', type=str, default='usual', help='pyramid|usual')
+
+        # Segmentation options
+        self.parser.add_argument('--lr_seg', type=float, default=1e-3,
+                                 help='initial learning rate for sgd')
+        self.parser.add_argument('--momentum_seg', type=float, default=0.9,
+                                 help='momentum for sgd for the segmentation task')
 
 
 

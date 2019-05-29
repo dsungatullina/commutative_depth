@@ -10,7 +10,7 @@ import torch
 import numpy as np
 
 class CreateDataset(data.Dataset):
-    def initialize(self, opt):
+    def initialize(self, opt, net_transform=None):
         self.opt = opt
 
         self.img_source_paths, self.img_source_size = make_dataset(opt.img_source_file)
@@ -18,146 +18,124 @@ class CreateDataset(data.Dataset):
 
         if self.opt.isTrain:
             self.lab_source_paths, self.lab_source_size = make_dataset(opt.lab_source_file)
-            # for visual results, not for training
-            self.lab_target_paths, self.lab_target_size = make_dataset(opt.lab_target_file)
+            assert(self.img_source_size == self.lab_source_size)
 
-        self.transform_augment_img = get_transform(opt, True, True)
-        self.transform_no_augment_img = get_transform(opt, False, True)
+        # def get_transform(opt, augment, isImg, net_transform=None)
+        self.transform_augment_img = get_transform(opt, True, True, net_transform)
+        self.transform_no_augment_lab = get_transform(opt, False, False)
 
-        self.transform_no_augment_lab_synt = get_transform(opt, False, False, True)
-        self.transform_no_augment_lab_real = get_transform(opt, False, False, False)
+        # print('!!!!!!!!!!!!!!!!!!!!!!')
+        # item = 10
+        # img_target_path = self.img_target_paths[item % self.img_target_size]
+        # print(img_target_path)
+        # img_target = Image.open(img_target_path).convert('RGB')
+        # if self.opt.resize:
+        #     size = (int(self.opt.loadSize.split(',')[0]), int(self.opt.loadSize.split(',')[1]))
+        #     print(size)
+        #     resize_transform_img = transforms.Resize(size, interpolation=Image.LANCZOS)
+        #     img_target = resize_transform_img(img_target)
+        # print(img_target.size)
+        # img_target.save('/media/hpc4_Raid/dsungatullina/submission/check_target.png')
+        # print('!!!!!!!!!!!!!!!!!!!!!!')
 
 
     def __getitem__(self, item):
-        index = random.randint(0, self.img_target_size - 1)
-        img_source_path = self.img_source_paths[item % self.img_source_size]
-        if self.opt.dataset_mode == 'paired':
-            img_target_path = self.img_target_paths[item % self.img_target_size]
-        elif self.opt.dataset_mode == 'unpaired':
-            img_target_path = self.img_target_paths[index]
-        else:
-            raise ValueError('Data mode [%s] is not recognized' % self.opt.dataset_mode)
+        img_target_path = self.img_target_paths[item % self.img_target_size]
 
-        img_source = Image.open(img_source_path).convert('RGB')
         img_target = Image.open(img_target_path).convert('RGB')
+        #img_target.save('/media/hpc4_Raid/dsungatullina/submission/check_target.png')
+
+        if self.opt.resize:
+            size = (int(self.opt.loadSize.split(',')[0]), int(self.opt.loadSize.split(',')[1]))
+            resize_transform_img = transforms.Resize(size, interpolation=Image.LANCZOS)
+            img_target = resize_transform_img(img_target)
 
         if self.opt.crop:
             crop_transform = transforms.RandomCrop(self.opt.cropSize)
-            seed_source = random.randint(0, 2 ** 32)
-            random.seed(seed_source)
-            img_source = crop_transform(img_source)
-            seed_target = random.randint(0, 2 ** 32)
-            random.seed(seed_target)
             img_target = crop_transform(img_target)
 
         if self.opt.isTrain:
+            img_source_path = self.img_source_paths[item % self.img_source_size]
             lab_source_path = self.lab_source_paths[item % self.lab_source_size]
-            if self.opt.dataset_mode == 'paired':
-                lab_target_path = self.lab_target_paths[item % self.img_target_size]
-            elif self.opt.dataset_mode == 'unpaired':
-                lab_target_path = self.lab_target_paths[index]
-            else:
-                raise ValueError('Data mode [%s] is not recognized' % self.opt.dataset_mode)
 
+            img_source = Image.open(img_source_path).convert('RGB')
             lab_source = Image.open(lab_source_path).convert('L')
-            lab_source = np.array(lab_source)
-            lab_source[lab_source == -1] = 255
-            lab_source[lab_source == 155] = 255
-            lab_source[lab_source == 255] = 19
-            lab_source = Image.fromarray(lab_source)
 
-            lab_target = Image.open(lab_target_path).convert('L')
-            lab_target = np.array(lab_target)
-            lab_target[lab_target == -1] = 255
-            lab_target[lab_target == 155] = 255
-            lab_target[lab_target == 255] = 19
-            lab_target = Image.fromarray(lab_target)
+            if self.opt.resize:
+                img_source = resize_transform_img(img_source)
+                resize_transform_lab = transforms.Resize(size, interpolation=Image.NEAREST)
+                lab_source = resize_transform_lab(lab_source)
 
             if self.opt.crop:
+                seed_source = random.randint(0, 2 ** 32)
                 random.seed(seed_source)
+                img_source = crop_transform(img_source)
                 lab_source = crop_transform(lab_source)
-                random.seed(seed_target)
-                lab_target = crop_transform(lab_target)
 
-            img_source, lab_source, scale = paired_transform(self.opt, img_source, lab_source)
-            img_target, lab_target, scale = paired_transform(self.opt, img_target, lab_target)
+            img_source, lab_source = paired_transform(self.opt, img_source, lab_source)
+
+            img_target = self.transform_augment_img(img_target)
 
             img_source = self.transform_augment_img(img_source)
-            lab_source = self.transform_no_augment_lab_synt(lab_source)
+            lab_source = self.transform_no_augment_lab(lab_source)
 
-            img_target = self.transform_no_augment_img(img_target)
-            lab_target = self.transform_no_augment_lab_real(lab_target)
-
-            print("lab_source", lab_source.min(), lab_source.max())
-            print("lab_target", lab_target.min(), lab_target.max())
-            print("img_source", img_source.min(), img_source.max())
-            print("img_target", img_target.min(), img_target.max())
-
-
-            return {'img_source': img_source, 'img_target': img_target,
-                    'lab_source': lab_source, 'lab_target': lab_target,
-                    'img_source_paths': img_source_path, 'img_target_paths': img_target_path,
-                    'lab_source_paths': lab_source_path, 'lab_target_paths': lab_target_path
+            return {'img_target': img_target,
+                    'img_source': img_source, 'lab_source': lab_source,
+                    'img_target_paths': img_target_path,
+                    'img_source_paths': img_source_path, 'lab_source_paths': lab_source_path
                     }
 
         else:
-            img_source = self.transform_augment_img(img_source)
             img_target = self.transform_no_augment_img(img_target)
-            return {'img_source': img_source, 'img_target': img_target,
-                    'img_source_paths': img_source_path, 'img_target_paths': img_target_path,
+            return {'img_target': img_target,
+                    'img_target_paths': img_target_path
                     }
 
     def __len__(self):
         return max(self.img_source_size, self.img_target_size)
 
     def name(self):
-        return 'Dataset'
+        return 'SegDataset'
 
 
-def dataloader(opt):
+def dataloader(opt, net_transform):
     datasets = CreateDataset()
-    datasets.initialize(opt)
+    datasets.initialize(opt, net_transform)
     dataset = data.DataLoader(datasets, batch_size=opt.batchSize, shuffle=opt.shuffle, num_workers=int(opt.nThreads))
     return dataset
 
-def paired_transform(opt, image, depth):
-    scale_rate = 1.0
-
+def paired_transform(opt, image, lab):
     if opt.flip:
         n_flip = random.random()
         if n_flip > 0.5:
             image = F.hflip(image)
-            depth = F.hflip(depth)
-
+            lab = F.hflip(lab)
     if opt.rotation:
         n_rotation = random.random()
         if n_rotation > 0.5:
             degree = random.randrange(-500, 500)/100
             image = F.rotate(image, degree, Image.BICUBIC)
-            depth = F.rotate(depth, degree, Image.BILINEAR)
-
-    return image, depth, scale_rate
-
+            lab = F.rotate(lab, degree, Image.BILINEAR)
+    return image, lab
 
 def to_tensor_raw(im):
     return torch.from_numpy(np.array(im, np.int64, copy=False))
 
-
-def get_transform(opt, augment, isRGB, isSynt=True):
+def get_transform(opt, augment, is_img, net_transform=None):
     transforms_list = []
-
-    if isRGB:
-        # if augment & opt.isTrain:
-        #     transforms_list.append(transforms.ColorJitter(brightness=0.0, contrast=0.0, saturation=0.0, hue=0.0))
-        # transforms_list += [
-        #     transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        # ]
-        transforms_list += [
-            transforms.ToTensor(), transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-        ]
-    else:
+    if is_img: # rgb image
+        if augment & opt.isTrain:
+            transforms_list.append(transforms.ColorJitter(brightness=0.0, contrast=0.0, saturation=0.0, hue=0.0))
+        if net_transform is not None:
+            transforms_list += [
+                net_transform
+            ]
+        else:
+            transforms_list += [
+                transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ]
+    else: # label
         transforms_list += [
             to_tensor_raw
         ]
-
     return transforms.Compose(transforms_list)

@@ -34,7 +34,7 @@ class BaseOptions():
                                  help='chooses how datasets are loaded. [paired| unpaired]')
         self.parser.add_argument('--resize', action='store_true',
                                  help='if specified, resize inputs according to the loadSize')
-        self.parser.add_argument('--loadSize', type=list, default=[640, 192],
+        self.parser.add_argument('--loadSize', type=str, default=[640, 192],
                                  help='load image into same size [256, 192]|[640, 192]')
         self.parser.add_argument('--flip', action='store_true',
                                  help='if specified, do flip the image for data augmentation')
