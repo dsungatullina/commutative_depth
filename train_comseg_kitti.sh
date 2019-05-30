@@ -1,11 +1,11 @@
-python -m visdom.server -port 8090 &
+python -m visdom.server -port 8092 &
 python train_comseg_kitti.py \
 --seg_model_name drn26 \
 --lr_seg 0.0001 \
 --niter 10 \
 --niter_decay 10 \
---display_port 8090 \
---batchSize 2 \
+--display_port 8092 \
+--batchSize 1 \
 --gpu_ids 0 \
 --name test_comseg_model \
 --model commutative_seg \

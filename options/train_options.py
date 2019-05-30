@@ -76,6 +76,12 @@ class TrainOptions(BaseOptions):
                                  help='initial learning rate for sgd')
         self.parser.add_argument('--momentum_seg', type=float, default=0.9,
                                  help='momentum for sgd for the segmentation task')
+        self.parser.add_argument('--lambda_seg_S', type=float, default=10.0,
+                                 help='weight for commutative segmentation loss for realistic images')
+        self.parser.add_argument('--lambda_seg_com_S', type=float, default=10.0,
+                                 help='weight for commutative segmentation loss for realistic images')
+        self.parser.add_argument('--lambda_seg_com_R', type=float, default=10.0,
+                                 help='weight for commutative segmentation loss for synthetic images')
 
 
 

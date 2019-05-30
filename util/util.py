@@ -75,7 +75,6 @@ def tensor2im_2(image_tensor, bytes=255.0, imtype=np.uint8):
     elif image_tensor.size(1) == 3: # rgb
         image_numpy = image_tensor[0].cpu().float().numpy()
         image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0
-        print('image_numpy', image_numpy.min(), image_numpy.max())
         image_numpy = image_numpy * bytes
         return image_numpy.astype(imtype)
     else: # segmentation maps

@@ -21,8 +21,7 @@ class ComSegModel(BaseModel):
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
 
-        # self.loss_names = ['G_R2S', 'G_S2R', 'D_S', 'D_R', 'cycle_S', 'cycle_R', 'com_S', 'com_R', 'l1_DS']
-        self.loss_names = ['G_R2S', 'G_S2R', 'D_S', 'D_R', 'cycle_S', 'cycle_R', 'lab_s']
+        self.loss_names = ['G_R2S', 'G_S2R', 'D_S', 'D_R', 'cycle_S', 'cycle_R', 'lab_s', 'lab_com_s', 'lab_com_r']
         self.visual_names_S = ['img_s', 'fake_r', 'lab_s', 'lab_s_g', 'lab_fake_r_g']
         self.visual_names_R = ['img_r', 'fake_s',          'lab_r_g', 'lab_fake_s_g']
         self.visual_names_Others = ['rec_r', 'rec_s', 'idt_r', 'idt_s']
@@ -214,6 +213,10 @@ class ComSegModel(BaseModel):
         lambda_idt = self.opt.lambda_identity
         lambda_S = self.opt.lambda_S    # syn
         lambda_R = self.opt.lambda_R    # real
+
+        lambda_lab_S = self.opt.lambda_seg_S
+        lambda_lab_com_S = self.opt.lambda_seg_com_S
+        lambda_lab_com_R = self.opt.lambda_seg_com_R
         # GAN loss
         self.loss_G_R2S = self.criterionGAN(self.net_D_S(self.fake_s), True)
         self.loss_G_S2R = self.criterionGAN(self.net_D_R(self.fake_r), True)
@@ -234,87 +237,18 @@ class ComSegModel(BaseModel):
                       + self.loss_cycle_R + self.loss_idt_S + self.loss_idt_R
 
         # segmentation loss
-        self.loss_lab_s = self.supervised_loss(self.lab_s_g, self.lab_s)
+        self.loss_lab_s = self.supervised_loss(self.lab_s_g, self.lab_s) * lambda_lab_S
+
+        #commutative losses
+        #print('self.lab_fake_r_g', self.lab_fake_r_g.argmax(dim=1))
+        self.loss_lab_com_s = 0.5 * (self.supervised_loss(self.lab_fake_r_g, self.lab_s_g.argmax(dim=1)) \
+                             + self.supervised_loss(self.lab_s_g, self.lab_fake_r_g.argmax(dim=1))) * lambda_lab_com_S
+        self.loss_lab_com_r = 0.5 * (self.supervised_loss(self.lab_fake_s_g, self.lab_r_g.argmax(dim=1)) \
+                             + self.supervised_loss(self.lab_r_g, self.lab_fake_s_g.argmax(dim=1))) * lambda_lab_com_R
 
         # total loss
-        total_loss = self.loss_G + self.loss_lab_s
+        total_loss = self.loss_G + self.loss_lab_s + self.loss_lab_com_s + self.loss_lab_com_r
         total_loss.backward()
-
-#         ####
-#         # tmp1 = self.gen_depth_s[4].clone()
-#         # self.loss_DS2R_DS = self.crtiterionCom_DS2R_DS(self.gen_depth_fake_r[4], tmp1.detach())
-#         # tmp2 = self.gen_depth_fake_r[4].clone()
-#         # self.loss_DS_DS2R = self.crtiterionCom_DR2S_DR(self.gen_depth_s[4], tmp2.detach())
-#         # self.loss_com_S =  0.5 * (self.loss_DS2R_DS + self.loss_DS_DS2R) * self.opt.lambda_com_S
-#         #
-#         # tmp3 = self.gen_depth_r[4].clone()
-#         # self.loss_DR2S_DR = self.crtiterionCom_DS_DS2R(self.gen_depth_fake_s[4], tmp3.detach())
-#         # tmp4 = self.gen_depth_fake_s[4].clone()
-#         # self.loss_DR_DR2S =  self.crtiterionCom_DR_DR2S(self.gen_depth_r[4], tmp4.detach())
-#         # self.loss_com_R = 0.5 * (self.loss_DR2S_DR + self.loss_DR_DR2S) * self.opt.lambda_com_R
-#         #
-#         # self.loss_D_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
-#         # self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
-#
-#         if self.opt.com_loss == 'usual':
-#             # com S
-#             loss_com_S = torch.mean(torch.abs(self.gen_depth_fake_r[4] - self.gen_depth_s[4]))
-#             self.loss_com_S = loss_com_S * self.opt.lambda_com_S
-#             # com R
-#             loss_com_R = torch.mean(torch.abs(self.gen_depth_fake_s[4] - self.gen_depth_r[4]))
-#             self.loss_com_R = loss_com_R * self.opt.lambda_com_R
-#         elif self.opt.com_loss == 'pyramid':
-#             # com S
-#             loss_com_S = 0.0
-#             for (i_gen_depth_fake_r, i_gen_depth_s) in zip(self.gen_depth_fake_r, self.gen_depth_s):
-#                 loss_com_S = loss_com_S + torch.mean(torch.abs(i_gen_depth_fake_r - i_gen_depth_s))
-#             self.loss_com_S = loss_com_S * self.opt.lambda_com_S
-#             # com R
-#             loss_com_R = 0.0
-#             for (i_gen_depth_fake_s, i_gen_depth_r) in zip(self.gen_depth_fake_s, self.gen_depth_r):
-#                 loss_com_R = loss_com_R + torch.mean(torch.abs(i_gen_depth_fake_s - i_gen_depth_r))
-#             self.loss_com_R = loss_com_R * self.opt.lambda_com_R
-#         else:
-#             raise ValueError('Unknown commutative loss type.')
-#
-#         # l1 depth syn
-#         if self.opt.l1syndepth_loss == 'usual':
-#             loss_l1_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
-#             self.loss_l1_DS = loss_l1_DS * self.opt.lambda_l1_DS
-#         elif self.opt.l1syndepth_loss == 'pyramid':
-#             size = len(self.gen_depth_fake_r)
-#             depth_syn = task.scale_pyramid(self.depth_s, size)
-#             loss_l1_DS = 0.0
-#             for (i_gen_depth_s, i_depth_syn) in zip(self.gen_depth_s, depth_syn):
-#                 loss_l1_DS = loss_l1_DS + self.crtiterionCom_D_DS(i_gen_depth_s, i_depth_syn)
-#             self.loss_l1_DS = loss_l1_DS * self.opt.lambda_l1_DS
-#         else:
-#             raise ValueError('Unknown depth l1 loss type.')
-#
-#         # task loss
-#         self.loss_T = self.loss_com_S + self.loss_com_R + self.loss_l1_DS
-#         # total loss
-#         self.loss_total = self.loss_G * self.opt.lambda_cycle + self.loss_T
-#         self.loss_total.backward()
-#
-#     # def backward_T(self):
-#     #     tmp1 = self.gen_depth_s[4].clone()
-#     #     self.loss_DS2R_DS = self.crtiterionCom_DS2R_DS(self.gen_depth_fake_r[4], tmp1.detach())
-#     #     tmp2 = self.gen_depth_fake_r[4].clone()
-#     #     self.loss_DS_DS2R = self.crtiterionCom_DR2S_DR(self.gen_depth_s[4], tmp2.detach())
-#     #     self.loss_com_S =  0.5 * (self.loss_DS2R_DS + self.loss_DS_DS2R) * self.opt.lambda_com_S
-#     #
-#     #     tmp3 = self.gen_depth_r[4].clone()
-#     #     self.loss_DR2S_DR = self.crtiterionCom_DS_DS2R(self.gen_depth_fake_s[4], tmp3.detach())
-#     #     tmp4 = self.gen_depth_fake_s[4].clone()
-#     #     self.loss_DR_DR2S =  self.crtiterionCom_DR_DR2S(self.gen_depth_r[4], tmp4.detach())
-#     #     self.loss_com_R = 0.5 * (self.loss_DR2S_DR + self.loss_DR_DR2S) * self.opt.lambda_com_R
-#     #
-#     #     self.loss_D_DS = self.crtiterionCom_D_DS(self.gen_depth_s[4], self.depth_s.detach())
-#     #     self.loss_l1_DS = self.loss_D_DS * self.opt.lambda_l1_DS
-#     #
-#     #     self.loss_T = self.loss_com_S + self.loss_com_R + self.loss_l1_DS
-#     #     self.loss_T.backward()
 
 
     def optimize_parameters(self, epoch_iter):

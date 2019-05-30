@@ -24,20 +24,6 @@ class CreateDataset(data.Dataset):
         self.transform_augment_img = get_transform(opt, True, True, net_transform)
         self.transform_no_augment_lab = get_transform(opt, False, False)
 
-        # print('!!!!!!!!!!!!!!!!!!!!!!')
-        # item = 10
-        # img_target_path = self.img_target_paths[item % self.img_target_size]
-        # print(img_target_path)
-        # img_target = Image.open(img_target_path).convert('RGB')
-        # if self.opt.resize:
-        #     size = (int(self.opt.loadSize.split(',')[0]), int(self.opt.loadSize.split(',')[1]))
-        #     print(size)
-        #     resize_transform_img = transforms.Resize(size, interpolation=Image.LANCZOS)
-        #     img_target = resize_transform_img(img_target)
-        # print(img_target.size)
-        # img_target.save('/media/hpc4_Raid/dsungatullina/submission/check_target.png')
-        # print('!!!!!!!!!!!!!!!!!!!!!!')
-
 
     def __getitem__(self, item):
         img_target_path = self.img_target_paths[item % self.img_target_size]
