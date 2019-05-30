@@ -100,7 +100,7 @@ class BaseOptions():
                                  help='size of random crop')
         self.parser.add_argument('--maxRealDepth', type=float, default=473.57,
                                  help='maximum value of depth for real images in meters')
-        self.parser.add_argument('--init_Depth_netG_filename', type=str, default='',
+        self.parser.add_argument('--init_depth_netG_filename', type=str, default='',
                                  help='absolute path with filename to the pretrained depth net')
         self.parser.add_argument('--init_S2R_netG_filename', type=str, default='',
                                  help='')

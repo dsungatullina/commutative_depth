@@ -20,6 +20,9 @@ def create_model(opt):
     elif opt.model == 'commutative_seg':
         from .ComSegModel import ComSegModel
         model = ComSegModel()
+    elif opt.model == 'commutative_full':
+        from .ComFullModel import ComFullModel
+        model = ComFullModel()
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     model.initialize(opt)

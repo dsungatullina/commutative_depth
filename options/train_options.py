@@ -20,8 +20,8 @@ class TrainOptions(BaseOptions):
         # learning rate and loss weight
         self.parser.add_argument('--lr_policy', type=str, default='lambda',
                                  help='learning rate policy[lambda|step|plateau]')
-        self.parser.add_argument('--lr_task', type=float, default=1e-4,
-                                 help='initial learning rate for adam')
+        self.parser.add_argument('--lr_depth', type=float, default=1e-4,
+                                 help='initial learning rate for adam for the depth estimation net')
         self.parser.add_argument('--lr_trans', type=float, default=5e-5,
                                  help='initial learning rate for discriminator')
         self.parser.add_argument('--lambda_rec_img', type=float, default=100.0,

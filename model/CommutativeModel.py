@@ -101,11 +101,12 @@ class CommutativeModel(BaseModel):
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
                 # depth losses
-            self.crtiterionCom_DS2R_DS = torch.nn.L1Loss()
-            self.crtiterionCom_DR2S_DR = torch.nn.L1Loss()
-            self.crtiterionCom_DS_DS2R = torch.nn.L1Loss()
-            self.crtiterionCom_DR_DR2S = torch.nn.L1Loss()
             self.crtiterionCom_D_DS = torch.nn.L1Loss()
+            self.crtiterionCom_DS2R_DS = torch.nn.L1Loss()
+            self.crtiterionCom_DS_DS2R = torch.nn.L1Loss()
+            self.crtiterionCom_DR2S_DR = torch.nn.L1Loss()
+            self.crtiterionCom_DR_DR2S = torch.nn.L1Loss()
+
 
             # define optimizers
             # self.optimizer_T2 = torch.optim.Adam(itertools.chain(self.net_Depth.parameters(), self.net_S2R.parameters(),
