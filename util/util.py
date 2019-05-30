@@ -66,6 +66,22 @@ def tensor2im_(image_tensor, bytes=255.0, imtype=np.uint8):
         image_numpy = remap_labels_to_palette(image_numpy.astype(imtype))
         return image_numpy
 
+# convert a tensor into a numpy array
+def tensor2im_2(image_tensor, bytes=255.0, imtype=np.uint8):
+    if image_tensor.dim() == 3: # grayscale
+        image_numpy = image_tensor[0].cpu().numpy()
+        image_numpy = remap_labels_to_palette(image_numpy.astype(imtype))
+        return image_numpy
+    elif image_tensor.size(1) == 3: # rgb
+        image_numpy = image_tensor[0].cpu().float().numpy()
+        image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0
+        print('image_numpy', image_numpy.min(), image_numpy.max())
+        image_numpy = image_numpy * bytes
+        return image_numpy.astype(imtype)
+    else: # segmentation maps
+        image_numpy = image_tensor[0].argmax(dim=0).cpu().numpy()
+        image_numpy = remap_labels_to_palette(image_numpy.astype(imtype))
+        return image_numpy
 
 def save_image(image_numpy, image_path):
     if image_numpy.shape[2] == 1:

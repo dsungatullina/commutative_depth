@@ -9,9 +9,9 @@ from collections import OrderedDict
 from .models import get_model
 from util import util
 
-class SegNetModel(BaseModel):
+class SegModel(BaseModel):
     def name(self):
-        return 'SegNet Model'
+        return 'Segmentation Model'
 
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
@@ -25,6 +25,8 @@ class SegNetModel(BaseModel):
 
         if self.isTrain:
 
+            # self.optimizer_img2seg = torch.optim.Adam(self.net_img2seg.parameters(), lr=opt.lr_seg,
+            #                                          betas=(opt.momentum_seg, 0.9))
             self.optimizer_img2seg = torch.optim.SGD(self.net_img2seg.parameters(), lr=opt.lr_seg,
                                                      momentum=opt.momentum_seg)
 
@@ -105,7 +107,6 @@ class SegNetModel(BaseModel):
         self.loss_lab_s.backward()
 
     def optimize_parameters(self, epoch_iter):
-
         self.forward()
         # task network
         self.optimizer_img2seg.zero_grad()

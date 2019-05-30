@@ -123,6 +123,8 @@ class BaseOptions():
         # SEGMENTATION ARGUMENTS
         self.parser.add_argument('--seg_model_name', type=str, default='drn26')
         self.parser.add_argument('--num_cls', type=int, default=14)
+        self.parser.add_argument('--init_seg_netG_filename', type=str, default='',
+                                 help='')
 
     def parse(self):
         if not self.initialized:

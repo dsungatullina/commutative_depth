@@ -1,3 +1,4 @@
+import torch
 
 def create_model(opt):
     print(opt.model)
@@ -14,15 +15,17 @@ def create_model(opt):
         from .test_model import TestModel
         model = TestModel()
     elif opt.model == 'supervised_seg':
-        from .SegModel import SegNetModel
-        model = SegNetModel()
+        from .SegModel import SegModel
+        model = SegModel()
+    elif opt.model == 'commutative_seg':
+        from .ComSegModel import ComSegModel
+        model = ComSegModel()
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     model.initialize(opt)
     print("model [%s] was created." % (model.name()))
     return model
 
-import torch
 
 models = {}
 def register_model(name):
