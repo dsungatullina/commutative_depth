@@ -117,7 +117,7 @@ class ComFullModel(BaseModel):
                 [{'params': self.net_img2seg.parameters(), 'lr': opt.lr_seg, 'betas': (opt.momentum_seg, 0.999)},
                  {'params': itertools.chain(self.net_S2R.parameters(), self.net_R2S.parameters()),
                   'lr': opt.lr_trans, 'betas': (0.5, 0.9)},
-                 {'params': self.net_img2depth.parameters(), 'lr': opt.lr_depth, 'betas': (0.95, 0.999)}])
+                 {'params': self.net_img2depth.parameters(), 'lr': opt.lr_dep, 'betas': (0.95, 0.999)}])
 
             # # define optimizers
             # self.optimizer_T2 = torch.optim.SGD([
@@ -276,8 +276,8 @@ class ComFullModel(BaseModel):
 
         # depth loss
         # l1
-        loss_dep_l1_S = self.crtiterionL1(self.gen_depth_s[4], self.depth_s.detach())
-        self.loss_dep_l1_S = loss_dep_l1_S * lambda_dep_l1_S
+        loss_dep_l1_S = self.crtiterionL1(self.dep_s_g[4], self.dep_s.detach())
+        self.loss_dep_l1_S = loss_dep_l1_S * lambda_dep_S
         # com S
         loss_dep_com_S = torch.mean(torch.abs(self.dep_fake_r_g[4] - self.dep_s_g[4]))
         self.loss_dep_com_S = loss_dep_com_S * lambda_dep_com_S

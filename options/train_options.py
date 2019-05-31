@@ -20,7 +20,7 @@ class TrainOptions(BaseOptions):
         # learning rate and loss weight
         self.parser.add_argument('--lr_policy', type=str, default='lambda',
                                  help='learning rate policy[lambda|step|plateau]')
-        self.parser.add_argument('--lr_depth', type=float, default=1e-4,
+        self.parser.add_argument('--lr_dep', type=float, default=1e-4,
                                  help='initial learning rate for adam for the depth estimation net')
         self.parser.add_argument('--lr_trans', type=float, default=5e-5,
                                  help='initial learning rate for discriminator')
@@ -63,9 +63,9 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--lambda_identity', type=float, default=0.5,
                             help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
         # Commutative options
-        self.parser.add_argument('--lambda_com_S', type=float, default=10.0, help='weight for loss D(s) = D(S2R(s))')
-        self.parser.add_argument('--lambda_com_R', type=float, default=10.0, help='weight for loss D(r) = D(R2S(r))')
-        self.parser.add_argument('--lambda_l1_DS', type=float, default=1.0, help='weight for loss D(s) = D_s')
+        self.parser.add_argument('--lambda_dep_com_S', type=float, default=10.0, help='weight for loss D(s) = D(S2R(s))')
+        self.parser.add_argument('--lambda_dep_com_R', type=float, default=10.0, help='weight for loss D(r) = D(R2S(r))')
+        self.parser.add_argument('--lambda_dep_S', type=float, default=1.0, help='weight for loss D(s) = D_s')
 
         self.parser.add_argument('--lambda_cycle', type=float, default=1.0, help='weight for the overall cycle loss in the total loss')
         self.parser.add_argument('--com_loss', type=str, default='usual', help='pyramid|usual')

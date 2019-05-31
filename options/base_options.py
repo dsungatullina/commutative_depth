@@ -120,6 +120,9 @@ class BaseOptions():
         self.parser.add_argument('--init_models', action='store_true',
                                  help='init two translation nets, the task net and discriminator nets if train mode')
 
+        self.parser.add_argument('--dep_source_file', type=str, default='',
+                                 help='training depths for the source domain')
+
         # SEGMENTATION ARGUMENTS
         self.parser.add_argument('--seg_model_name', type=str, default='drn26')
         self.parser.add_argument('--num_cls', type=int, default=14)

@@ -1,6 +1,6 @@
 import time
 from options.train_options import TrainOptions
-from dataloader.data_loader_seg import dataloader
+from dataloader.data_loader_full import dataloader
 from model.models import create_model
 from util.visualizer import Visualizer
 
@@ -22,6 +22,7 @@ for epoch in range(opt.epoch_count, opt.niter+opt.niter_decay+1):
 
     # training
     for i, data in enumerate(dataset):
+        # print(data)
         iter_start_time = time.time()
         total_steps += opt.batchSize
         epoch_iter += opt.batchSize
