@@ -1,6 +1,6 @@
 import torch
 import itertools
-import util.task as task
+#import util.task as task
 from torch.autograd import Variable
 from .base_model import BaseModel
 from util.image_pool import ImagePool

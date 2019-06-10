@@ -6,7 +6,7 @@ import math
 import torch.utils.model_zoo as model_zoo
 import torchvision
 
-from .util import safe_load_state_dict
+from util.util import safe_load_state_dict
 from .models import register_model
 
 # from util import safe_load_state_dict
