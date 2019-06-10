@@ -9,6 +9,9 @@ import torchvision
 from .util import safe_load_state_dict
 from .models import register_model
 
+# from util import safe_load_state_dict
+# from models import register_model
+
 __all__ = ['DRN', 'drn26', 'drn42', 'drn58']
 
 

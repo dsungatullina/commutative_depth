@@ -1,10 +1,10 @@
-python -m visdom.server -port 8092 &
+python -m visdom.server -port 8094 &
 python train_comfull_kitti.py \
---name test_comfull_model \
+--name comfull_model_8094 \
 --model commutative_full \
 --gpu_ids 0 \
 --batchSize 1 \
---display_port 8092 \
+--display_port 8094 \
 --seg_model_name drn26 \
 --niter 1 \
 --niter_decay 9 \
@@ -29,12 +29,12 @@ python train_comfull_kitti.py \
 --beta1 0.5 \
 --lambda_S 10.0 \
 --lambda_R 10.0 \
---lambda_dep_S 10.0 \
 --lambda_cycle 1.0 \
---lambda_dep_com_S 5.0 \
---lambda_dep_com_R 5.0 \
---lambda_seg_S 10.0 \
---lambda_seg_com_S 5.0 \
---lambda_seg_com_R 5.0 \
+--lambda_dep_S 50.0 \
+--lambda_dep_com_S 10.0 \
+--lambda_dep_com_R 0.0 \
+--lambda_seg_S 50.0 \
+--lambda_seg_com_S 10.0 \
+--lambda_seg_com_R 0.0 \
 
 

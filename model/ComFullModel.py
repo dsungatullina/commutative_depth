@@ -119,6 +119,11 @@ class ComFullModel(BaseModel):
                   'lr': opt.lr_trans, 'betas': (0.5, 0.9)},
                  {'params': self.net_img2depth.parameters(), 'lr': opt.lr_dep, 'betas': (0.95, 0.999)}])
 
+            # self.optimizer_T2 = torch.optim.Adam(
+            #     [{'params': self.net_img2seg.parameters(), 'lr': opt.lr_seg, 'betas': (opt.momentum_seg, 0.999)},
+            #      {'params': itertools.chain(self.net_S2R.parameters(), self.net_R2S.parameters()),
+            #       'lr': opt.lr_trans, 'betas': (0.5, 0.9)}])
+
             # # define optimizers
             # self.optimizer_T2 = torch.optim.SGD([
             #     {'params': itertools.chain(self.net_S2R.parameters(), self.net_R2S.parameters()), 'lr': opt.lr_task},
@@ -198,17 +203,18 @@ class ComFullModel(BaseModel):
         self.idt_s = self.net_R2S(self.img_s)
         self.idt_r = self.net_S2R(self.img_r)
 
+        # depth
+        self.dep_s_g = self.net_img2depth(self.img_s)
+        self.dep_r_g = self.net_img2depth(self.img_r)
+        self.dep_fake_s_g = self.net_img2depth(self.fake_s)
+        self.dep_fake_r_g = self.net_img2depth(self.fake_r)
+
         # seg
         self.lab_s_g = self.net_img2seg(self.renorm(self.img_s))
         self.lab_r_g = self.net_img2seg(self.renorm(self.img_r))
         self.lab_fake_r_g = self.net_img2seg(self.renorm(self.fake_r))
         self.lab_fake_s_g = self.net_img2seg(self.renorm(self.fake_s))
 
-        # depth
-        self.dep_s_g = self.net_img2depth(self.img_s)
-        self.dep_r_g = self.net_img2depth(self.img_r)
-        self.dep_fake_s_g = self.net_img2depth(self.fake_s)
-        self.dep_fake_r_g = self.net_img2depth(self.fake_r)
 
 
     def backward_D_basic(self, netD, real, fake):

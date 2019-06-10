@@ -1,13 +1,13 @@
-python -m visdom.server -port 8092 &
+python -m visdom.server -port 8093 &
 python train_comseg_kitti.py \
 --seg_model_name drn26 \
 --lr_seg 0.0001 \
 --niter 1 \
 --niter_decay 9 \
---display_port 8092 \
+--display_port 8093 \
 --batchSize 1 \
 --gpu_ids 0 \
---name test_comseg_model \
+--name comseg_model_8093 \
 --model commutative_seg \
 --shuffle \
 --img_target_file  /media/hpc4_Raid/dsungatullina/submission/vkitti-kitti/kitti/lists_hpc4/eigen_rgb_train.txt \
@@ -22,3 +22,6 @@ python train_comseg_kitti.py \
 --init_S2R_netG_filename /media/hpc4_Raid/dsungatullina/submission/commutative_depth/init_models/5_net_G_A.pth \
 --init_S2R_netD_filename /media/hpc4_Raid/dsungatullina/submission/commutative_depth/init_models/5_net_D_A.pth \
 --init_seg_netG_filename /media/hpc4_Raid/dsungatullina/submission/commutative_depth/init_models/vkitti_drn26-iter100000.pth \
+--lambda_seg_S 10.0 \
+--lambda_seg_com_S 1.0 \
+--lambda_seg_com_S 1.0 \

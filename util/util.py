@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import imageio
+import matplotlib.cm as mpl
 
 # convert a tensor into a numpy array
 def tensor2im(image_tensor, bytes=255.0, imtype=np.uint8):
@@ -66,12 +67,29 @@ def tensor2im_(image_tensor, bytes=255.0, imtype=np.uint8):
         image_numpy = remap_labels_to_palette(image_numpy.astype(imtype))
         return image_numpy
 
+def depth2colormap(image, colormap='jet'):
+    """
+    :param image:numpy array from [0,1]
+    :param colormap: string (name of the colormap)
+    :return:
+    """
+    cm = mpl.get_cmap(colormap)
+    return cm(image)
+
+
 # convert a tensor into a numpy array
 def tensor2im_2(image_tensor, bytes=255.0, imtype=np.uint8):
-    if image_tensor.dim() == 3: # grayscale
+    if image_tensor.dim() == 3: # gt labels
         image_numpy = image_tensor[0].cpu().numpy()
         image_numpy = remap_labels_to_palette(image_numpy.astype(imtype))
         return image_numpy
+    elif image_tensor.size(1) == 1:  # depth
+        image_numpy = image_tensor[0].cpu().float().numpy()
+        image_numpy = (image_numpy[0, :, :] + 1.0) / 2.0
+        #image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0
+        image_numpy = depth2colormap(image_numpy)
+        image_numpy = image_numpy * bytes
+        return image_numpy.astype(imtype)
     elif image_tensor.size(1) == 3: # rgb
         image_numpy = image_tensor[0].cpu().float().numpy()
         image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0
